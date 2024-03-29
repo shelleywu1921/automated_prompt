@@ -41,3 +41,56 @@ Here are some things that we found helpful with the training loop:
 Sample training curve: 
 
 <img src="train_curve.png" width=500 height=400>
+
+## Examples of Generated Prompts
+
+```
+MODEL_PROMPT: Instructions: Based on the content and data provided, narrow down to the most precise response among options - A, B, C, or D. Your reaction should be simply in terms of the letter that fully justifies the correct answer.
+```
+Accuracy: 0.9333333333333333
+
+```
+MODEL_PROMPT: Based on the information and context provided, compute the most suitable answer between the options - A, B, C, or D. Your reply should straightforwardly be the single letter that characterizes the correct response.
+```
+Accuracy: 0.9333333333333333
+
+```
+MODEL_PROMPT: Refer to the given details and discussion and discern the correct response from the options A, B, C, or D. Deliver your response as the single most fitting letter.
+```
+Accuracy: 0.9
+
+```
+MODEL_PROMPT: Consider the details provided in the context. Select the best answer from A, B, C, and D. Please express your answer only through the relevant letter.
+```
+Accuracy: 0.9
+
+```
+MODEL_PROMPT: Given the context and details, deduce the most accurate answer among the provided options - A, B, C, or D. Ensure that your response consists merely of the single letter that corresponds to the correct answer.
+```
+Accuracy: 0.9
+
+```
+MODEL_PROMPT: Reflect, comprehend, and sort the proposed evidence. Pick out the correct solution from A, B, C, or D. Release your evaluation by using just the solitary letter that encompasses the position of the correct alternative.
+```
+Accuracy: 0.9
+
+```
+MODEL_PROMPT: Having thoroughly scrutinized the information and specifics provided, derive the correct response from the alternatives given - A, B, C, or D. The appropriate reaction should be submitted strictly using the singular letter affiliated with the accurate answer.
+```
+Accuracy: 0.9
+
+```
+MODEL_PROMPT: Upon analyzing the given information, identify the most accurate answer from the options - A, B, C, or D. Your response should simply consist of the solitary letter that denotes the correct response.
+```
+Accuracy: 0.9
+
+```
+MODEL_PROMPT: After thoroughly reviewing the information and context given, determine the most correct answer out of the options A, B, C, or D. Your response should be only the single letter that represents the correct choice.
+```
+Accuracy: 0.9
+
+```
+MODEL_PROMPT: Analyze the context and details intently, then discern the best response from the options enumerated - A, B, C, or D. Render your answer solely comprising the singular letter associated with the precise answer.
+```
+Accuracy: 0.9
+
