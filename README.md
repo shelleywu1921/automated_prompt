@@ -37,3 +37,7 @@ Here are some things that we found helpful with the training loop:
 * Evaluating on a larger subset of data benefits training. This makes sense because of the diversity of examples. 
 
 * Meta prompt by design only takes a subset of eval results. Strive for a balance between diversity (`strategy="random"`) and quality (`strategy="best_worst").
+
+Sample training curve: 
+
+<img src="train_curve.png" width=500 height=400>
