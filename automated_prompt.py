@@ -1,15 +1,17 @@
+import os
 from datasets import load_dataset
 import numpy as np 
 from matplotlib import pyplot as plt 
 from scipy import stats
 import pandas as pd 
 from tqdm import tqdm 
+import math 
 
 from openai import OpenAI
 
 # Setup: 
-eval_client = OpenAI() # prompt evaluation 
-prompt_client = OpenAI() # prompt generator 
+eval_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY")) # prompt evaluation 
+prompt_gen_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY")) # prompt generator 
 
 dataset_all = load_dataset("ehovy/race", "all")
 
@@ -20,7 +22,7 @@ def get_response_msg(response):
 
 def _get_query(prompt, example): 
     '''
-    Generate 
+    Generate query for eval_client
     '''
     query = f'''
 {prompt}
@@ -78,7 +80,7 @@ def eval(prompt, test_size=10):
         for t in response.choices[0].logprobs.content[0].top_logprobs: 
             if t.token in ('A', 'B', 'C', 'D'): 
                 logprobs[corresp[t.token]] = t.logprob 
-        print(logprobs)
+        # print(logprobs)
         ce = -logprobs[corresp[example['answer']]]
 
         model_answer = response.choices[0].message.content
@@ -104,6 +106,7 @@ def eval(prompt, test_size=10):
     ci = t_stat.confidence_interval(confidence_level=0.95)
 
     return {
+        "prompt": prompt, 
         "results_df": results_df, 
         "avg_ce": avg_ce, 
         "accuracy": accuracy, 
@@ -111,38 +114,61 @@ def eval(prompt, test_size=10):
     } 
 
 
-def select_eval_examples(results_df, n=10): 
-    indices = np.random.choice(np.arange(len(results_df)), size=n, replace=False)
+def select_eval_examples(results_df, n=10, strategy='random'):
+    '''
+    select eval examples to feed into promp_gen_client that optimizes for a better prompt
+    
+    Inputs: 
+        results_df: eval result of past prompts as df 
+        n: number of examples 
+        strategy: 
+            highly recommended that you get a diverse set of prompts and outcomes 
+            - random: randomly select n prompts 
+            - best_worse: select the bottom n/2 and top n/2 examples ranked by entropy 
+    ''' 
+    assert n <= len(results_df)
+
+    if strategy == 'random': 
+        indices = np.random.choice(np.arange(len(results_df)), size=n, replace=False)
+    elif strategy == 'best_worst': 
+        sorted_idx = results_df.ce.sort_values(ascending=False).index
+        indices = list(sorted_idx[:math.ceil(n/2)]) + list(sorted_idx[-math.floor(n/2):])
+    else:
+        raise NotImplementedError(f"strategy {strategy} is not implemented")
     s = []
     for i in indices: 
         s.append(
             f"""
 Prompt: {results_df.loc[i, 'prompt']}
-Article: {results_df.loc[i, 'article']}
-Question: {results_df.loc[i, 'question']}
-Options: {results_df.loc[i, 'options']}
 Correct Answer: {results_df.loc[i, 'correct_answer']}
 Model Answer: {results_df.loc[i, 'model_answer']}
 Entropy: {results_df.loc[i, 'ce']}
 """
 )
+    # Article: {results_df.loc[i, 'article']}
+    # Question: {results_df.loc[i, 'question']}
+    # Options: {results_df.loc[i, 'options']}
     return s 
 
-prompt = "Answer the question based on the article. Your only choices of answers are A, B, C, D"
-eval_result = eval(prompt, test_size=10)
-breakpoint()
+def get_meta_prompt(eval_result, n=10, strategy='best_worst'): 
+    if isinstance(eval_result, dict): 
+        results_df = eval_result['results_df']
+    elif isinstance(eval_result, list): 
+        results_df = pd.concat([e['results_df'] for e in eval_result], ignore_index=True)
+    else:
+        raise TypeError(f"eval_result only accept type dict or list, got {type(eval_result)}")
+    
+    s = select_eval_examples(results_df, n=n, strategy='best_worst')
+    meta_prompt = f"""
+You are responsible for prompting a large language model on a question-answering task. 
+Your objective is to generate a MODEL_PROMPT that encourages the model to produce the correct answer and minimizes entropy. 
+Do not include article, questions, or answer into your prompt. 
 
-# meta_prompt = f"""
-# You are a grad student working for an NLP lab. Your objective is to generate a prompt that minimize entropy. 
-# Do not include article, questions, or answer into your prompt. 
-
-# The model is given your prompt, an article, a question, and a list of options. The model returns the correct answer based on the prompt. 
-# {" ".join(s)}
-# """
-# print(meta_prompt)
-
-
-
-
-
-
+Here are some sample prompts and the model's responses to them, with the format: 
+Prompt: <MODEL_PROMPT>
+Correct Answer: <MODEL'S TARGET OUTPUT>
+Model Answer: <MODEL'S ACTUAL OUTPUT>
+Entropy: <SOMETHING YOU WANT TO MINIMIZE>
+{" ".join(s)}
+"""
+    return meta_prompt
